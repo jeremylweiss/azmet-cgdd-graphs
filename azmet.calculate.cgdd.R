@@ -33,9 +33,7 @@
 azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   
   
-  ##################################################################
-  ##  B. GET / TRIM AZMET DATA AND ESTABLISH GLOBAL DETAILS
-  ##################################################################
+  #####  DOWNLOAD AZMET DATA
   
   
   #  Download the most recent AZMET data for the chosen station
@@ -44,20 +42,25 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   source( 'azmet.data.download.R' )
   stn_data <- azmet.data.download( stn_name )
   
+  
+  #####  FORMAT DATA AND ADDRESS MISSING VALUES
+  
+  
   #  Dataframe columns of interest include year, month, day, doy, 
   #  stn_no, and Tmean. Select these columns from the AZMET station 
   #  data.
-  stn_data <- as_tibble( select( stn_data,year,month,day,doy,stn_no,Tmean ) )
-  
-  #  Load the .csv file that contains a list of station names, 
-  #  numbers, start years, and end years. We will use this for
-  #  determining the years for which data exist for each station, 
-  #  which we will use in the GDD calculations for individual years.
-  #AZMET_stn_list <- read.csv( "C:/Users/jlweiss/Documents/R/application/AZMET/GDD/AZMET-GDD/AZMET_station_list_active.csv",sep="," )
+  stn_data <- select( stn_data,
+                      year,
+                      month,
+                      day,
+                      doy,
+                      stn_no,
+                      Tmean )
   
   #  Extract the row of information (station name, station number,
   #  start year, and end year) tied to the selected AZMET station.
-  stn_info <- subset( AZMET_stn_list,stn==stn_name )
+  stn_info <- subset( stn_list,
+                      stn == stn_name )
   
   #  The start doy of the start year for AZMET stations varies.
   #  Thus, there may be instances in which GDD calculations for an
@@ -68,8 +71,9 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   #  after the designated 'doy_start'. If 'doy' is earlier than 
   #  'doy_start', the current 'stn_data' is fine. If 'doy' is later
   #  than 'doy_start', remove the first year of data from 'stn_data'.
-  if ( stn_data$doy[ 1 ] > doy_start) {
-    stn_data <- filter( stn_data,stn_data$year > stn_info$start_yr )
+  if ( first( stn_data$doy ) > doy_start ) {
+    stn_data <- filter( stn_data,
+                        stn_data$year > stn_info$start_yr )
     stn_info$start_yr <- stn_info$start_yr + 1
   }
   
@@ -79,16 +83,28 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   
   #  This function will use doy Tmean climatology to fill in daily
   #  Tmean values of NA when calculating daily GDD values.
-  #  Preallocate a Tmean climatology matrix and calculate the doy
+  #  Preallocate a Tmean climatology vector and calculate the doy
   #  Tmean climatology. Initial values of NA in the preallocated
   #  matrix will be overwritten by Tmean climatology values.
-  Tmean_clim <- matrix( data=NA,nrow=366,ncol=1 )
+  Tmean_clim <- matrix( data = NA,
+                        nrow = 366,
+                        ncol = 1 )
   for( i in 1:nrow( Tmean_clim ) ) {
     a <- filter( stn_data,doy==i )
     Tmean_clim[ i,1 ] <- mean( a$Tmean,na.rm=TRUE )
     rm( a )
   }
   rm( i )
+  
+  
+  Tmean_clim <- group_by( stn_data,doy ) %>%
+    summarize( mean( Tmean,na.rm = TRUE ) )
+  
+  
+  group
+  
+  
+  
   
   
   ##################################################################
