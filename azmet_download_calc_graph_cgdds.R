@@ -26,7 +26,7 @@
 library( "dplyr" )
 
 #  Load required functions.
-source( "azmet.data.download.R" )
+source( "azmet.calculate.cgdd.R" )
 
 #  Load information about currently active AZMET stations.
 stn_list <- read.csv( "azmet_station_list_active.csv",sep="," )
@@ -35,13 +35,36 @@ stn_list <- read.csv( "azmet_station_list_active.csv",sep="," )
 #  in "azmet_station_list_active.csv".
 stn_name <- "Bonita"
 
+#  Set the base temperature with which to calculate GDDs. Units 
+#  for base temperatures need to be in degrees C.
+t_base <- 10
 
-#####  ACQUIRE DATA
+#  Set the day-of-year from which to start calculating CGDDs and
+#  from within the same calendar year.
+doy_start <- 1
 
+
+#####  ACQUIRE DATA AND CALCULATE CGDDS
+
+
+#  This function uses daily average temperature data from an 
+#  individual AZMET station and calculates growing degree-days 
+#  (GDD) and cumulative GDDs for each year.
+
+#  Input arguments include 'stn_name', selected from 'stn_list'
+#  dataframe, 't_base', the base temperature with which to 
+#  calculate GDDs, and 'doy_start', the start day-of-year within 
+#  the same calendar year. Units for base temperatures need to be 
+#  in degrees C.
 
 #  Download data for the specified station.
-stn_data <- azmet.data.download( stn_name )
+stn_data <- azmet.calculate.cgdd( stn_name,t_base,doy_start )
 
+
+#####  CALCULATE CGDDS
+
+
+x
 
 
 #####

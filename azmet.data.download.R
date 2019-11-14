@@ -23,10 +23,13 @@
 #  environment.
 
 
+#####  START THE FUNCTION
+
+
 azmet.data.download <- function( stn_name ) {
   
   
-  #  SETUP 
+  #####  SETUP 
   
   
   #  AZMET data format changes between the periods 1987-2002 and
@@ -85,7 +88,7 @@ azmet.data.download <- function( stn_name ) {
   suffix <- "rd.txt"
   
   
-  #  DOWNLOAD AND FORMAT DATA
+  #####  DOWNLOAD DATA
   
   
   #  Recall that AZMET data are provided year-by-year. This means
@@ -146,27 +149,26 @@ azmet.data.download <- function( stn_name ) {
   stn_data <- stn_data2
   rm( i,stn_data2 )
   
+  
+  #####  FORMAT DATA
+  
+  
   #  Set the column names for the downloaded data.
   colnames( stn_data ) <- col_names
   
-  #  For data summaries, it may be useful to have the 'month' and 
-  #  'day' corresponding to the existing 'year' and 'doy'. Create 
-  #  these former vectors and add them to the 'stn_data' data frame.
-  dates <- strptime( paste( stn_data$year,
-                            stn_data$doy ),
-                     format="%Y %j" )
-  year <- as.numeric( format( dates,"%Y" ) )
-  month <- as.numeric( format( dates,"%m" ) )
-  day <- as.numeric( format( dates,"%d" ) )
-  stn_data <- cbind( year,month,day,stn_data[ ,2:28 ] )
+  #  For data summaries, it may be useful to have the 'date', 
+  #  'month' and 'day' corresponding to the existing 'year' and
+  #  'doy'. Create these former vectors and add them to the 
+  #  'stn_data' data frame.
+  date <- as.Date.character( paste( stn_data$year,
+                                    stn_data$doy ),
+                             format="%Y %j" )
+  year <- as.numeric( format( date,"%Y" ) )
+  month <- as.numeric( format( date,"%m" ) )
+  day <- as.numeric( format( date,"%d" ) )
+  stn_data <- cbind( date,year,month,day,stn_data[ ,2:28 ] )
   
-  rm( dates,day,month,year )
-  
-  
-  ##################################################################
-  ##  E. CLEAN THE DAILY AZMET DATA
-  ##################################################################
-  
+  rm( date,day,month,year )
   
   #  Based on previous work with AZMET data, there are several known
   #  formatting bugs in the original / downloaded data files. We will
@@ -188,10 +190,34 @@ azmet.data.download <- function( stn_name ) {
   #  remove these rows.
   stn_data <- distinct( stn_data )
   
+  #  Create a dataframe that mimics the actual station data, but
+  #  has a full YYYYMMDD list. AZMET data can have missing date
+  #  entries.
   
-  ##################################################################
-  ##  G. CLOSE THE FUNCTION
-  ##################################################################
+  #  Create a new object that fully expands dates between the 
+  #  first and last dates in the station data. 
+  date_full <- seq( first( stn_data$date ),last( stn_data$date ),by="days" )
+  
+  #  Convert this new object to a dataframe that will allow us to
+  #  join with the station data. Dataframe column names must match
+  #  the column names in the station data in order to join.
+  stn_data_full <- data.frame( matrix( NA,
+                                       nrow=length( date_full ) ) )
+  colnames( stn_data_full ) <- "date"
+  stn_data_full$date <- date_full
+  
+  #  Join the complete dates dataframe with the station data by
+  #  using 'd.date' as the key.
+  stn_data_full <- left_join( stn_data_full,
+                              stn_data,
+                              by="date" )
+  
+  stn_data <- as_tibble( stn_data_full )
+  rm( stn_data_full )
+  
+  
+  #####  RETURN THE DATA AND CLOSE THE FUNCTION
+  
   
   return( stn_data )
 }
