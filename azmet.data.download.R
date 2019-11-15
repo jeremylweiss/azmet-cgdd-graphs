@@ -190,6 +190,10 @@ azmet.data.download <- function( stn_name ) {
   #  remove these rows.
   stn_data <- distinct( stn_data )
   
+  
+  ##### ADDRESS MISSING VALUES
+  
+  
   #  Create a dataframe that mimics the actual station data, but
   #  has a full YYYYMMDD list. AZMET data can have missing date
   #  entries.
@@ -207,13 +211,24 @@ azmet.data.download <- function( stn_name ) {
   stn_data_full$date <- date_full
   
   #  Join the complete dates dataframe with the station data by
-  #  using 'd.date' as the key.
+  #  using 'date' as the key.
   stn_data_full <- left_join( stn_data_full,
                               stn_data,
                               by="date" )
   
   stn_data <- as_tibble( stn_data_full )
   rm( stn_data_full )
+  
+  #  Fill in values for year, month, day, and day-of-year for any
+  #  date entries that may be missing in the downloaded original 
+  #  data.
+  stn_data$year <- as.numeric( format( stn_data$date,"%Y" ) )
+  stn_data$month <- as.numeric( format( stn_data$date,"%m" ) )
+  stn_data$day <- as.numeric( format( stn_data$date,"%d" ) )
+  stn_data$doy <- as.numeric( format( stn_data$date,"%j" ) )
+  
+  #  Do similarly with the station number value.
+  stn_data$stn_no <- stn_info$stn_no
   
   
   #####  RETURN THE DATA AND CLOSE THE FUNCTION

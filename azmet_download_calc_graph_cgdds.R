@@ -61,10 +61,10 @@ doy_start <- 1
 stn_data <- azmet.calculate.cgdd( stn_name,t_base,doy_start )
 
 
-#####  CALCULATE CGDDS
+#####  GRAPH CGDDS
 
 
-x
+#  
 
 
 #####

@@ -27,7 +27,7 @@
 #  degrees C.
 
 
-#####  A. START THE FUNCTION
+#####  START THE FUNCTION
 
 
 azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
@@ -43,13 +43,14 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   stn_data <- azmet.data.download( stn_name )
   
   
-  #####  FORMAT DATA AND ADDRESS MISSING VALUES
+  #####  FORMAT DATA
   
   
   #  Dataframe columns of interest include year, month, day, doy, 
   #  stn_no, and Tmean. Select these columns from the AZMET station 
   #  data.
   stn_data <- select( stn_data,
+                      date,
                       year,
                       month,
                       day,
@@ -81,55 +82,32 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
   #  selected station.
   stn_yrs <- as.integer( select( stn_info,start_yr ) ):as.integer( select( stn_info,end_yr ) )
   
-  #  This function will use doy Tmean climatology to fill in daily
+  #  This script will use doy Tmean climatology in place of daily
   #  Tmean values of NA when calculating daily GDD values.
-  #  Preallocate a Tmean climatology vector and calculate the doy
-  #  Tmean climatology. Initial values of NA in the preallocated
-  #  matrix will be overwritten by Tmean climatology values.
-  Tmean_clim <- matrix( data = NA,
-                        nrow = 366,
-                        ncol = 1 )
-  for( i in 1:nrow( Tmean_clim ) ) {
-    a <- filter( stn_data,doy==i )
-    Tmean_clim[ i,1 ] <- mean( a$Tmean,na.rm=TRUE )
-    rm( a )
-  }
-  rm( i )
-  
-  
+  #  Make a doy-Tmean climatology vector and calculate the doy
+  #  Tmean climatology.
+  #Tmean_clim <- matrix( data = NA,
+  #                      nrow = 366,
+  #                      ncol = 1 )
+  #for( i in 1:nrow( Tmean_clim ) ) {
+  #  a <- filter( stn_data,doy==i )
+  #  Tmean_clim[ i,1 ] <- mean( a$Tmean,na.rm=TRUE )
+  #  rm( a )
+  #}
+  #rm( i )
   Tmean_clim <- group_by( stn_data,doy ) %>%
-    summarize( mean( Tmean,na.rm = TRUE ) )
+    summarize( Tmean_clim = mean( Tmean,na.rm = TRUE ) )
   
   
-  group
+  #####  CALCULATE DAILY GDD VALUES
   
-  
-  
-  
-  
-  ##################################################################
-  ##  C. CALCULATE DAILY GDD VALUES
-  ##################################################################
-  
-  
-  #  Add an extra column to the 'stn_data' dataframe to mark daily
-  #  data that are missing. We will use this information for data
-  #  visualization purposes later on in the overall project. The
-  #  initial value for all rows in this column will be NA. Overwrite
-  #  these initial values with logical output from the 'is.na' 
-  #  function. Also, rename the new column to "is.na" and convert 
-  #  the logical output to integer.
-  stn_data[ ,ncol( stn_data )+1 ] <- NA
-  names( stn_data )[ ncol( stn_data ) ] <- "is.na"
-  stn_data$is.na <- is.na( stn_data$Tmean )
-  stn_data$is.na <- as.integer( stn_data$is.na )
   
   #  Add an extra column to the 'stn_data' dataframe for the daily
-  #  GDD values that will be assigned or calculated. The initial 
-  #  value for all rows in this column will be NA. Also, rename the 
-  #  new column to "GDD".
+  #  GDD values that will be  calculated. The initial value for 
+  #  all rows in this column will be NA. Also, rename the new 
+  #  column to "GDD".
   stn_data[ ,ncol( stn_data )+1 ] <- NA
-  names( stn_data )[ ncol( stn_data ) ] <- "GDD"
+  colnames( stn_data )[ ncol( stn_data ) ] <- "GDD"
   
   #  Iteratively go through the daily Tmean values and assign or
   #  calculate a corresponding GDD value for each doy and year.
@@ -141,87 +119,74 @@ azmet.calculate.cgdd <- function( stn_name,t_base,doy_start ) {
     if ( stn_data$doy[ i ] < doy_start ) {
       stn_data$GDD[ i ] <- 0
     }
+    
     #  Or, if a doy is equal to or after 'doy_start', go through the 
     #  following GDD value assignment or calculation.
-    else{
+    else {
       
       #  If the Tmean value for a doy and year is missing, substitue
       #  the climatological Tmean value for the missing Tmean value
       #  for that doy and year, and assign or calculate the daily 
-      #  GDD. Occurrence of this substitution is marked by 'TRUE' 
-      #  values in the stn_data$is.na column.
-      if( stn_data$is.na[ i ]==TRUE ) {
+      #  GDD.
+      if ( is.na( stn_data$Tmean[ i ]==TRUE ) ) {
         
         #  If the climatological Tmean value for a doy is less than
         #  'Tbase', assign a GDD value of 0.
-        if ( Tmean_clim[ stn_data$doy[ i ] ] < Tbase ) {
+        if ( Tmean_clim$Tmean_clim[ stn_data$doy[ i ] ] < t_base ) {
           stn_data$GDD[ i ] <- 0
         }
         #  Or, if the climatological Tmean value for a doy is equal
         #  to or greater than 'Tbase', calculate the daily GDD.
-        else{
-          stn_data$GDD[ i ] <- Tmean_clim[ stn_data$doy[ i ] ] - Tbase
+        else {
+          stn_data$GDD[ i ] <- Tmean_clim$Tmean_clim[ stn_data$doy[ i ] ] - t_base
         }
       }
       
-      #  Or, if the Tmean value for a doy and year is less than
-      #  'Tbase', assign a GDD value of 0.
-      else if( stn_data$Tmean[ i ] < Tbase ) {
+      #  Or, if the Tmean value for a doy and year is present and 
+      #  less than 't_base', assign a GDD value of 0.
+      else if ( stn_data$Tmean[ i ] < t_base ) {
         stn_data$GDD[ i ] <- 0
       }
-      #  Or, if the daily Tmean value is equal to or greater than
-      #  'Tbase', calculate the daily GDD.
-      else{
-        stn_data$GDD[ i ] <- stn_data$Tmean[ i ] - Tbase
-      }
       
-    }
-    
-  }
-  rm( i )
-  
-  
-  ##################################################################
-  ##  D. CALCULATE DAILY CUMMULATIVE GDD VALUES BY CALENDAR YEAR
-  ##################################################################
-  
-  
-  #  Add an extra column to the 'stn_data' dataframe for the daily
-  #  cummulative GDD values that will be calculated. The initial 
-  #  value for all rows in this column will be NA. Also, rename the 
-  #  new column to "cGDD".
-  stn_data[ ,ncol( stn_data )+1 ] <- NA
-  names( stn_data )[ ncol( stn_data ) ] <- "cGDD"
-  
-  #  Iteratively go through the daily GDD values and calculate a 
-  #  corresponding cummulative GDD value for each doy by calendar
-  #  year.
-  for ( i in 1:nrow( stn_data ) ) {
-    
-    #  We first address the condition of a GDD value being the first
-    #  in the station data record. If it is, the 'cGDD' value is
-    #  simply the same value as the 'GDD' value.
-    if ( i==1 ) {
-      stn_data$cGDD[ i ] <- stn_data$GDD[ i ]
-    }
-    #  Or, if the GDD value is not the first in the station data
-    #  record, go through the following 'cGDD' value calculations.
-    else {
-      
-      #  If the GDD value is from the same calendar year as the one
-      #  in the previous row, add the GDD value to this previous
-      #  value.
-      if ( stn_data$year[ i ]==stn_data$year[ i-1 ] ) {
-        stn_data$cGDD[ i ] <- stn_data$cGDD[ i-1 ] + stn_data$GDD[ i ]
-      }
+      #  Or, if the daily Tmean value for a doy and year is present 
+      #  and equal to or greater than 't_base', calculate the daily
+      #  GDD.
       else {
-        stn_data$cGDD[ i ] <- stn_data$GDD[ i ]
+        stn_data$GDD[ i ] <- stn_data$Tmean[ i ] - t_base
       }
       
     }
     
   }
   rm( i )
+  
+  
+  #####  CALCULATE CGDD VALUES
+  
+  
+  #  Add a  column to the 'stn_data' dataframe for the daily
+  #  cummulative GDD values that will be calculated. The initial 
+  #  value for all rows in this column will be NA.
+  stn_data[ "CGDD" ] <- NA
+  
+  #  Calculate daily CGDD values for each year in station record.
+  for ( yr in 1:length( stn_yrs ) ) {
+    
+    #  Subset individual years.
+    x <- filter( stn_data,
+                 year == stn_yrs[ yr ] )
+    
+    #  Calculate cumulative sum of GDD values.
+    stn_data$CGDD[ which( stn_data$year == stn_yrs[ yr ] ) ] <- 
+      cumsum( x$GDD )
+    
+    rm( x )
+  }
+  rm( yr )
+  
+  
+  #####  PATCH
+  
   
   #  The Yuma South AZMET station has no entries from June 8, 2013
   #  through September 10, 2013. This renders any cGDD values from
