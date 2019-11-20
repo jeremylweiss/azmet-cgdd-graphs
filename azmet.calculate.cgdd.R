@@ -10,11 +10,6 @@
 #  School of Natural Resources and the Environment
 #  University of Arizona
 #  520-626-8063, jlweiss@email.arizona.edu
-#
-#  Michael Crimmins, Climate Science Extension Specialist
-#  Department of Soil, Water, and Environmental Science
-#  University of Arizona
-#  520-626-4244, crimmins@email.arizona.edu
 
 #  This code uses daily average temperature data from an individual 
 #  AZMET station and calculates growing degree-days (GDD) and 

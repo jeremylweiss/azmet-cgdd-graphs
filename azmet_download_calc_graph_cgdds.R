@@ -24,9 +24,12 @@
 
 #  Load required libraries.
 library( "dplyr" )
+library( "ggplot2" )
+library( "reshape2" )
 
 #  Load required functions.
 source( "azmet.calculate.cgdd.R" )
+source( "azmet.viz.cgdd.trace.R" )
 
 #  Load information about currently active AZMET stations.
 stn_list <- read.csv( "azmet_station_list_active.csv",sep="," )
@@ -57,14 +60,22 @@ doy_start <- 1
 #  the same calendar year. Units for base temperatures need to be 
 #  in degrees C.
 
-#  Download data for the specified station.
+#  Download data for the specified station. The
+#  'azmet.data.download.R' function is called within the following
+#  function.
 stn_data <- azmet.calculate.cgdd( stn_name,t_base,doy_start )
 
 
 #####  GRAPH CGDDS
 
 
+#  Assuming that needed packages are installed, make their
+#  contents available for use in the current R session.
+#require( reshape2 )
+#require( plotly )
+
 #  
+p <- azmet.viz.cgdd.trace()
 
 
 #####
