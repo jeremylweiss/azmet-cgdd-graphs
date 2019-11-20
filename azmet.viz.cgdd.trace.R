@@ -1,7 +1,7 @@
 
 
 ##################################################################
-##  FUNCTION FOR VISUALIZING GDD DATA TRACES FROM AZMET STATIONS 
+##  FUNCTION FOR VISUALIZING CGDD DATA TRACES FROM AZMET STATIONS 
 ##################################################################
 
 
@@ -15,17 +15,18 @@
 #  (CGDD) data from an individual AZMET station. Input argument is 
 #  'stn_data', which is generated from the R functions 
 #  'azmet.download.data.R' and 'azmet.calculate.cgdd.R'. The plot
-#  style includes past individual years, climatology, and current
-#  year time series. The variable 'p', which contains plotting 
-#  information for the 'ggplot' function, is returned.
+#  style includes traces of past individual years, climatology, 
+#  and current year time series. The object 'p', which contains 
+#  plotting information from the 'ggplot' function, is returned.
 
 
-##################################################################
-##  START THE FUNCTION
-##################################################################
+#####  START THE FUNCTION
 
 
 azmet.viz.cgdd.trace <- function( stn_data ) {
+  
+  
+  #####  SETUP DATA FOR GGPLOT
   
   
   #  Select from 'stn_data' the x variable ('doy') and y variable 
@@ -109,13 +110,13 @@ azmet.viz.cgdd.trace <- function( stn_data ) {
   
   #  Set up a dataframe with numeric values for each individual year
   #  in the station record. This will help with the symbology of the 
-  #  data traces. Add to this dataframe a row for a climatology value. 
+  #  data traces. Add to this dataframe a row for a climatology value.
   key <- as.data.frame( unique( df$year ) )
   key <- rbind( key, 9999 )
   colnames( key ) <- "stn_yrs"
   
   #  Assign colors to individual years before the current year, to the
-  #  current year, and to the climatology as a new vector to the 'key'
+  #  current year, and to the climatology as a new vector in the 'key'
   #  dataframe.
   for ( i in 1:nrow( key ) ) {
     #  Assign a color to individual years before the current year.
@@ -139,45 +140,66 @@ azmet.viz.cgdd.trace <- function( stn_data ) {
   key <- as.matrix( key$color )
   key <- apply( key,1,paste,collapse="," )
   
+  
+  #####  MAKE GGPLOT OBJECT
+  
+  
   #  Plot the most recent year, average, and min/max range
   #  of cGDD by doy.
-  ptitle <- paste( "cummulative growing degree-days at the AZMET",stn_name,"station",sep=" " )
-  p <- ggplot( data=stn_data_plot,aes( x=doy,y=CGDD,color=year ) ) +
-    geom_line( data=filter( stn_data_plot,year<max( unique( df$year ) ) ) ) + 
-    geom_line( data=filter( stn_data_plot,year=="climatology" ) ) + 
-    geom_line( data=filter( stn_data_plot,year==max( unique( df$year ) ) ) ) +
+  ptitle <- paste( "cummulative growing degree-days at the AZMET",
+                   stn_name,
+                   "station",
+                   sep=" " )
+  p <- ggplot( data = stn_data_plot,
+               mapping = aes( x = doy,
+                              y = CGDD,
+                              color = year ) ) +
+    #  Add CGDD values from past individual years.
+    geom_line( data = filter( .data = stn_data_plot,
+                              year < max( unique( df$year ) ) ) ) + 
+    #  Add CGDD climatology values.
+    geom_line( data = filter( .data = stn_data_plot,
+                              year == "climatology" ) ) + 
+    #  Add CGDD values from the current year.
+    geom_line( data = filter( .data = stn_data_plot,
+                              year == max( unique( df$year ) ) ) ) +
+    #  Add the graph title.
     ggtitle( ptitle ) +
-    labs( x="day of year",y="cummulative growing degree-days (cGDD)" ) +
-    theme_minimal() +
-    theme( plot.title=element_text( family="Arvo",color="#404040",face="bold",size=10 ) ) +
-    theme( axis.title=element_text( family="Arvo",color="#404040",face="plain",size=10 ) ) +
-    theme( plot.margin=unit( c( 0,0,1,1 ),"cm" ) ) +
-    theme( axis.text=element_text( family="Arvo",color="#404040",face="plain",size=10 ) ) + 
-    theme( legend.position="none") +
-    scale_x_continuous( breaks=c( 1,32,60,91,121,152,182,213,244,274,305,335 ),
-                        limits=c( min( stn_data_plot$doy ),365 ) ) +
-    scale_y_continuous( breaks=seq( min( stn_data_plot$CGDD,na.rm=TRUE ),
-                                    max( stn_data_plot$CGDD,na.rm=TRUE ),by=round( ( max( df$CGDD,na.rm=TRUE )/10 ),-2 ) ),
-                        limits=c( min( stn_data_plot$CGDD,na.rm=TRUE ),
-                                  max( stn_data_plot$CGDD,na.rm=TRUE )+1 ) ) +
-    scale_colour_manual( values=key )
+    #  Add the x axis and y axis labels.
+    labs( x = "day of year",
+          y = "CGDD" ) +
+    #  Specify the breaks, or gridlines, and the limits of both
+    #  plot axes.
+    scale_x_continuous( breaks = c( 1,32,60,91,121,152,182,213,244,274,305,335 ),
+                        limits = c( min( stn_data_plot$doy ),365 ),
+                        labels = c( "Jan","Feb","Mar","Apr","May","Jun",
+                                    "Jul","Aug","Sep","Oct","Nov","Dec" ) ) +
+    scale_y_continuous( breaks = seq( min( stn_data_plot$CGDD, na.rm = TRUE ),
+                                      max( stn_data_plot$CGDD, na.rm = TRUE ),
+                                      by = round( ( max( df$CGDD, na.rm = TRUE ) / 10 ),-2 ) ),
+                        limits = c( min( stn_data_plot$CGDD, na.rm = TRUE ),
+                                    max( stn_data_plot$CGDD, na.rm = TRUE ) + 1 ) ) +
+    #  Specify the ggplot theme, or overall appearance, of the
+    #  graph with the font set to 'mono'.
+    theme_minimal( base_family = "mono" ) +
+    #  Further customize the appearance of the graph.
+    theme( plot.title = element_text( color = "#404040",
+                                      face = "bold",
+                                      size = 10 ) ) +
+    theme( axis.title = element_text( color = "#404040",
+                                      face = "plain",
+                                      size = 10 ) ) +
+    theme( plot.margin = unit( c( 0,0,1,1 ), "cm" ) ) +
+    theme( axis.text = element_text( color = "#404040",
+                                     face = "plain",
+                                     size = 10 ) ) + 
+    theme( legend.position = "none" ) +
+    #  Specify line properties for the different time series.
+    scale_colour_manual( values = key )
   
-  #  Transform 'ggplot()' graph into a 'ggplotly()' graph.
-  #ggplotly( p )
-  #
-  #  Note that instead of the above, one must have the function
-  #  return the value/variable assigned to the 'ggplot' function
-  #  above, and then call the 'ggplotly' function outside of this
-  #  current function. See the following example code.
-  #source( 'azmet.viz.gdd.trace.R' )
-  #p <- azmet.viz.gdd.trace( "Bonita",10,1 )
-  #ggplotly( p )
   
-  
-##################################################################
-##  CLOSE THE FUNCTION
-##################################################################
+#####  RETURN THE GGPLOT OBJECT AND CLOSE THE FUNCTION
 
 
-return( p )
+  return( p )
 }

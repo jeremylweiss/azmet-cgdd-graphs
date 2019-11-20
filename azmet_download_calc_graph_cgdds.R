@@ -26,6 +26,7 @@
 library( "dplyr" )
 library( "ggplot2" )
 library( "reshape2" )
+library( "plotly" )
 
 #  Load required functions.
 source( "azmet.calculate.cgdd.R" )
@@ -58,24 +59,22 @@ doy_start <- 1
 #  dataframe, 't_base', the base temperature with which to 
 #  calculate GDDs, and 'doy_start', the start day-of-year within 
 #  the same calendar year. Units for base temperatures need to be 
-#  in degrees C.
+#  in degrees C. The 'azmet.data.download.R' function is called 
+#  within the following function.
 
-#  Download data for the specified station. The
-#  'azmet.data.download.R' function is called within the following
-#  function.
-stn_data <- azmet.calculate.cgdd( stn_name,t_base,doy_start )
+#  Calculate CGDDs for the specified station. 
+stn_data <- azmet.calculate.cgdd( stn_name, t_base, doy_start )
 
 
 #####  GRAPH CGDDS
 
 
-#  Assuming that needed packages are installed, make their
-#  contents available for use in the current R session.
-#require( reshape2 )
-#require( plotly )
+#  Generate the ggplot object using the 'azmet.viz.cgdd.trace.R'
+#  function.
+p <- azmet.viz.cgdd.trace( stn_data )
 
-#  
-p <- azmet.viz.cgdd.trace()
+#  Convert the ggplot object into Plotly graph.
+ggplotly( p )
 
 
 #####

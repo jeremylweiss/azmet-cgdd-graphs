@@ -35,7 +35,7 @@
 
 #  In the code, the 'azmet.viz.gdd.trace.R' function is called.
 #  Ensure that this file is present and that this code is looking
-#  for it in the right location. See Section X.
+#  for it in the right location. See Section B3.
 
 
 ##################################################################
