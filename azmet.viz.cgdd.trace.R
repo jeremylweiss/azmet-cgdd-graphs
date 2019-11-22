@@ -146,7 +146,7 @@ azmet.viz.cgdd.trace <- function( stn_data ) {
   
   #  Plot the most recent year, average, and min/max range
   #  of cGDD by doy.
-  ptitle <- paste( "cummulative growing degree-days at the AZMET",
+  ptitle <- paste( "cumulative growing degree-days at the AZMET",
                    stn_name,
                    "station",
                    sep=" " )
